@@ -55,6 +55,19 @@ export function extractLicense(tags?: string[], license?: string): string | unde
   return licenseTag ? licenseTag.replace("license:", "") : undefined;
 }
 
+export function parseParamsCount(params?: string): number | undefined {
+  if (!params) return undefined;
+  const match = params.trim().match(/^([\d.]+)\s*([kKmMbB])?$/);
+  if (!match) return undefined;
+  const value = parseFloat(match[1]);
+  const unit = match[2]?.toLowerCase();
+  if (Number.isNaN(value)) return undefined;
+  if (unit === "k") return value * 1_000;
+  if (unit === "m") return value * 1_000_000;
+  if (unit === "b") return value * 1_000_000_000;
+  return value;
+}
+
 export function getSizeBounds(size?: SearchFilters["size"]): {
   min_param_count?: number;
   max_param_count?: number;

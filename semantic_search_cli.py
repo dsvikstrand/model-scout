@@ -13,6 +13,21 @@ HF_ENDPOINT = (
 )
 
 
+def load_env_from_file(env_path: Path = Path(".env")) -> None:
+    """Lightweight .env loader to avoid external deps."""
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def load_catalog(path: Path) -> List[Dict[str, Any]]:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
@@ -103,6 +118,7 @@ def cosine_search(
 
 
 def main():
+    load_env_from_file()
     token = os.environ.get("HF_TOKEN")
     if not token:
         raise SystemExit("HF_TOKEN is not set in the environment.")

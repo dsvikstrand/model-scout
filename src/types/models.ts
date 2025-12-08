@@ -17,6 +17,7 @@ export interface ModelResult {
   url: string;
   similarity?: number;
   provider?: "semantic" | "keyword";
+   matchedQuery?: string;
 }
 
 // Task to pipeline_tag mappings for HF Hub API
