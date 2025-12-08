@@ -1,6 +1,13 @@
-import { SearchFilters, ModelResult, TASK_PIPELINE_TAGS, SIZE_RANGES } from "../types/models";
+import { SearchFilters, ModelResult, TASK_PIPELINE_TAGS } from "../types/models";
+import { extractLicense, filterBySize, getParamsValue, matchesTask } from "./modelUtils";
 
-const HF_HUB_API_URL = "https://huggingface.co/api/models";
+const DEFAULT_HF_API_BASE_URL = "https://huggingface.co/api";
+const HF_HUB_API_BASE_URL =
+  (
+    import.meta.env.VITE_HF_HUB_API_BASE_URL as string | undefined
+  )?.replace(/\/$/, "") || DEFAULT_HF_API_BASE_URL;
+const HF_HUB_API_URL = `${HF_HUB_API_BASE_URL}/models`;
+const HF_TOKEN = import.meta.env.VITE_HF_TOKEN as string | undefined;
 
 interface HubModel {
   id: string;
@@ -22,58 +29,66 @@ interface HubModel {
   };
   cardData?: {
     license?: string;
+    description?: string;
   };
-}
-
-function filterBySize(params: number | undefined, sizeFilter: SearchFilters["size"]): boolean {
-  if (!sizeFilter || params === undefined) return true;
-  
-  const range = SIZE_RANGES[sizeFilter];
-  if (range.min !== undefined && params < range.min) return false;
-  if (range.max !== undefined && params >= range.max) return false;
-  return true;
 }
 
 export async function searchModelsKeyword(
   query: string,
   filters: SearchFilters
 ): Promise<ModelResult[]> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
   const params = new URLSearchParams({
-    search: query,
+    search: trimmedQuery,
     limit: "50",
     sort: "downloads",
     direction: "-1",
   });
 
-  // Add pipeline_tag filter if task is specified
   if (filters.task && TASK_PIPELINE_TAGS[filters.task]) {
-    // Use the first pipeline tag for the task category
     params.append("pipeline_tag", TASK_PIPELINE_TAGS[filters.task][0]);
   }
 
-  const response = await fetch(`${HF_HUB_API_URL}?${params.toString()}`);
+  const response = await fetch(`${HF_HUB_API_URL}?${params.toString()}`, {
+    headers: HF_TOKEN
+      ? {
+          Authorization: `Bearer ${HF_TOKEN}`,
+        }
+      : undefined,
+  });
 
   if (!response.ok) {
-    throw new Error(`HF Hub search failed: ${response.status}`);
+    throw new Error(`HF Hub search failed: ${response.status} ${response.statusText}`);
   }
 
   const data: HubModel[] = await response.json();
 
   return data
     .map((model) => {
-      const totalParams = model.safetensors?.total;
-      
+      const totalParams = getParamsValue(model.safetensors?.total, model.safetensors?.parameters);
+      const license = extractLicense(model.tags, model.cardData?.license);
+
       return {
-        id: model.id,
-        description: undefined, // Hub API doesn't return descriptions in list
-        task: model.pipeline_tag,
-        params: totalParams,
-        framework: model.library_name,
-        downloads: model.downloads,
-        likes: model.likes,
-        license: model.cardData?.license,
-        url: `https://huggingface.co/${model.id}`,
+        result: {
+          id: model.id,
+          description: model.cardData?.description,
+          task: model.pipeline_tag,
+          params: totalParams,
+          framework: model.library_name,
+          downloads: model.downloads,
+          likes: model.likes,
+          license,
+          url: `https://huggingface.co/${model.id}`,
+        },
+        tags: model.tags,
       };
     })
-    .filter((model) => filterBySize(model.params, filters.size));
+    .filter(
+      ({ result, tags }) =>
+        filterBySize(result.params, filters.size) &&
+        matchesTask({ pipelineTag: result.task, tags }, filters.task)
+    )
+    .map(({ result }) => result);
 }

@@ -51,6 +51,8 @@ export function ModelResultsList({
   onRetry,
   onSwitchMode,
 }: ModelResultsListProps) {
+  const modeLabel = isSemanticMode ? "Semantic (AI search)" : "Keyword (HF Hub)";
+
   if (!hasSearched) {
     return <EmptyState type="initial" />;
   }
@@ -77,12 +79,25 @@ export function ModelResultsList({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Found {models.length} model{models.length !== 1 ? "s" : ""}
-      </p>
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        <span>
+          Found {models.length} model{models.length !== 1 ? "s" : ""}
+        </span>
+        <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-foreground/80 border border-border/60">
+          Mode: {modeLabel}
+        </span>
+      </div>
       {models.map((model, index) => (
         <ModelCard key={model.id} model={model} index={index} />
       ))}
+      {import.meta.env.DEV && models.length > 0 && (
+        <details className="text-xs text-muted-foreground bg-muted/40 border border-border/60 rounded-lg p-3">
+          <summary className="cursor-pointer text-foreground/80">Debug: first results (dev only)</summary>
+          <pre className="mt-2 whitespace-pre-wrap break-words text-foreground/80">
+{JSON.stringify(models.slice(0, 3), null, 2)}
+          </pre>
+        </details>
+      )}
     </div>
   );
 }

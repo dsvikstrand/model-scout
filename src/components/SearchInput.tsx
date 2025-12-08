@@ -27,7 +27,7 @@ export function SearchInput({ onSearch, isLoading }: SearchInputProps) {
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Describe the model you need…"
+            placeholder="Describe the model you need..."
             className="h-14 pl-12 pr-4 text-lg rounded-xl border-border/50 bg-background shadow-sm transition-all duration-200 focus-visible:ring-primary/20 focus-visible:border-primary/50 focus-visible:shadow-md"
           />
         </div>
@@ -36,7 +36,7 @@ export function SearchInput({ onSearch, isLoading }: SearchInputProps) {
           disabled={!value.trim() || isLoading}
           className="h-14 px-8 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-200"
         >
-          {isLoading ? "Searching…" : "Find Models"}
+          {isLoading ? "Searching..." : "Find Models"}
         </Button>
       </div>
     </form>

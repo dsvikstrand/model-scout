@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 
 interface ModelCardProps {
   model: ModelResult;
+  index?: number;
 }
 
 function formatNumber(num: number | undefined): string {
-  if (num === undefined) return "—";
+  if (num === undefined) return "N/A";
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toString();
@@ -21,11 +22,11 @@ function formatParams(params: number | undefined): string {
   return `${(params / 1_000).toFixed(0)}K`;
 }
 
-export function ModelCard({ model, index = 0 }: ModelCardProps & { index?: number }) {
+export function ModelCard({ model, index = 0 }: ModelCardProps) {
   return (
-    <div 
+    <div
       className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 animate-fade-in"
-      style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
+      style={{ animationDelay: `${index * 50}ms`, animationFillMode: "backwards" }}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -35,7 +36,7 @@ export function ModelCard({ model, index = 0 }: ModelCardProps & { index?: numbe
             </h3>
             <CopyButton text={model.id} />
           </div>
-          
+
           {model.description && (
             <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
               {model.description}
@@ -48,7 +49,7 @@ export function ModelCard({ model, index = 0 }: ModelCardProps & { index?: numbe
                 {model.task}
               </Badge>
             )}
-            {model.params && (
+            {model.params !== undefined && (
               <Badge variant="outline" className="text-xs">
                 {formatParams(model.params)}
               </Badge>

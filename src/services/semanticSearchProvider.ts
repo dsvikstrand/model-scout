@@ -1,6 +1,11 @@
-import { SearchFilters, ModelResult, SIZE_RANGES } from "../types/models";
+import { SearchFilters, ModelResult } from "../types/models";
+import { filterBySize, getParamsValue, matchesTask } from "./modelUtils";
 
-const SEMANTIC_API_URL = "https://davanstrien-huggingface-datasets-search-v2.hf.space";
+const DEFAULT_SEMANTIC_API_URL = "https://davanstrien-huggingface-datasets-search-v2.hf.space";
+const SEMANTIC_API_URL =
+  (
+    import.meta.env.VITE_SEMANTIC_SEARCH_BASE_URL as string | undefined
+  )?.replace(/\/$/, "") || DEFAULT_SEMANTIC_API_URL;
 
 interface SemanticSearchResponse {
   results?: Array<{
@@ -19,45 +24,39 @@ interface SemanticSearchResponse {
   }>;
 }
 
-function filterBySize(params: number | undefined, sizeFilter: SearchFilters["size"]): boolean {
-  if (!sizeFilter || params === undefined) return true;
-  
-  const range = SIZE_RANGES[sizeFilter];
-  if (range.min !== undefined && params < range.min) return false;
-  if (range.max !== undefined && params >= range.max) return false;
-  return true;
-}
-
 export async function searchModelsSemantic(
   query: string,
   filters: SearchFilters
 ): Promise<ModelResult[]> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
   const response = await fetch(`${SEMANTIC_API_URL}/api/search`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      query,
+      query: trimmedQuery,
       limit: 50,
       type: "model",
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Semantic search failed: ${response.status}`);
+    throw new Error(`Semantic search failed: ${response.status} ${response.statusText}`);
   }
 
   const data: SemanticSearchResponse = await response.json();
-  
+
   if (!data.results) {
     return [];
   }
 
   return data.results
     .map((item) => {
-      const totalParams = item.safetensors?.total;
-      
+      const totalParams = getParamsValue(item.safetensors?.total, item.safetensors?.parameters);
+
       return {
         id: item.id,
         description: item.summary || item.description,
@@ -70,21 +69,9 @@ export async function searchModelsSemantic(
         url: `https://huggingface.co/${item.id}`,
       };
     })
-    .filter((model) => {
-      // Apply size filter
-      if (!filterBySize(model.params, filters.size)) return false;
-      
-      // Apply task filter (best-effort matching)
-      if (filters.task && model.task) {
-        const taskLower = model.task.toLowerCase();
-        const filterTask = filters.task;
-        
-        if (filterTask === "text" && !taskLower.includes("text")) return false;
-        if (filterTask === "vision" && !taskLower.includes("image") && !taskLower.includes("vision")) return false;
-        if (filterTask === "audio" && !taskLower.includes("audio") && !taskLower.includes("speech")) return false;
-        if (filterTask === "multimodal" && !taskLower.includes("to-") && !taskLower.includes("visual")) return false;
-      }
-      
-      return true;
-    });
+    .filter(
+      (model) =>
+        filterBySize(model.params, filters.size) &&
+        matchesTask({ pipelineTag: model.task }, filters.task)
+    );
 }

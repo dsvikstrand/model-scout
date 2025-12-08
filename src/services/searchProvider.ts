@@ -7,8 +7,11 @@ export async function searchModels(
   query: string,
   filters: SearchFilters
 ): Promise<ModelResult[]> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
   if (mode === "semantic") {
-    return searchModelsSemantic(query, filters);
+    return searchModelsSemantic(trimmedQuery, filters);
   }
-  return searchModelsKeyword(query, filters);
+  return searchModelsKeyword(trimmedQuery, filters);
 }
