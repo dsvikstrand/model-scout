@@ -21,9 +21,12 @@ function formatParams(params: number | undefined): string {
   return `${(params / 1_000).toFixed(0)}K`;
 }
 
-export function ModelCard({ model }: ModelCardProps) {
+export function ModelCard({ model, index = 0 }: ModelCardProps & { index?: number }) {
   return (
-    <div className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-border hover:shadow-md transition-all">
+    <div 
+      className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 animate-fade-in"
+      style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -41,7 +44,7 @@ export function ModelCard({ model }: ModelCardProps) {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {model.task && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
                 {model.task}
               </Badge>
             )}
