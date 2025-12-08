@@ -34,10 +34,10 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
               type="button"
               onClick={() => onFiltersChange({ ...filters, task: task.value })}
               className={cn(
-                "px-3 py-1.5 text-sm rounded-full transition-all",
+                "px-3 py-1.5 text-sm rounded-full transition-all duration-200",
                 filters.task === task.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >
               {task.label}
@@ -55,10 +55,10 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
               type="button"
               onClick={() => onFiltersChange({ ...filters, size: size.value })}
               className={cn(
-                "px-3 py-1.5 text-sm rounded-full transition-all",
+                "px-3 py-1.5 text-sm rounded-full transition-all duration-200",
                 filters.size === size.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >
               {size.label}

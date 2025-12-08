@@ -80,8 +80,8 @@ export function ModelResultsList({
       <p className="text-sm text-muted-foreground">
         Found {models.length} model{models.length !== 1 ? "s" : ""}
       </p>
-      {models.map((model) => (
-        <ModelCard key={model.id} model={model} />
+      {models.map((model, index) => (
+        <ModelCard key={model.id} model={model} index={index} />
       ))}
     </div>
   );

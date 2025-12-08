@@ -37,7 +37,7 @@ const Index = () => {
         {/* Header */}
         <header className="text-center mb-10">
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
-            Model Scout
+            Model <span className="text-primary">Scout</span>
           </h1>
           <p className="mt-3 text-lg text-muted-foreground">
             Discover Hugging Face models with natural language
