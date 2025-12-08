@@ -51,12 +51,12 @@ def embed_texts(model_name: str, texts: List[str], batch_size: int = 32) -> np.n
 
 
 def main():
-    input= Path("models_catalog.json")
+    input_p= Path("models_catalog.json")
     output_p=Path("catalog_embeddings.json")
     model="BAAI/bge-small-en-v1.5"
     batch_size=32
 
-    catalog = load_catalog(input)
+    catalog = load_catalog(input_p)
     rows = flatten_queries(catalog)
     if not rows:
         raise SystemExit("No queries found in catalog")

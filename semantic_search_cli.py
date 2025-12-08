@@ -6,8 +6,10 @@ from typing import Dict, Any, List
 import numpy as np
 import requests
 
+# Updated to use the router + hf-inference endpoint
 HF_ENDPOINT = (
-    "https://api-inference.huggingface.co/pipeline/feature-extraction/BAAI/bge-small-en-v1.5"
+    "https://router.huggingface.co/hf-inference/models/"
+    "BAAI/bge-small-en-v1.5/pipeline/feature-extraction"
 )
 
 
@@ -30,25 +32,34 @@ def load_embeddings(emb_path: Path, meta_path: Path):
 def embed_query(text: str, token: str) -> np.ndarray:
     if not token:
         raise RuntimeError("HF_TOKEN is required to call the Inference API")
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
     response = requests.post(
         HF_ENDPOINT,
-        headers={
-          "Authorization": f"Bearer {token}",
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+        headers=headers,
         json={"inputs": [text]},
         timeout=60,
     )
     if not response.ok:
-        raise RuntimeError(f"Inference API error {response.status_code}: {response.text}")
+        raise RuntimeError(
+            f"Inference API error {response.status_code}: {response.text}"
+        )
+
     data = response.json()
     try:
         arr = np.array(data, dtype=np.float32)
     except Exception as exc:  # noqa: BLE001
         raise RuntimeError(f"Unexpected embedding response: {data}") from exc
+
     if arr.ndim != 2 or arr.shape[0] != 1:
-        raise RuntimeError(f"Embedding shape mismatch: got {arr.shape}, expected (1, D)")
+        raise RuntimeError(
+            f"Embedding shape mismatch: got {arr.shape}, expected (1, D)"
+        )
+
     vec = arr[0]
     norm = np.linalg.norm(vec) + 1e-12
     return (vec / norm).astype(np.float32)
@@ -108,7 +119,9 @@ def main():
     embeddings_path = Path("data/query_embeddings.npy")
     meta_path = Path("data/query_meta.json")
     if not embeddings_path.exists() or not meta_path.exists():
-        raise SystemExit("Embeddings or metadata not found. Run build_index_via_inference_api.py first.")
+        raise SystemExit(
+            "Embeddings or metadata not found. Run build_index_via_inference_api.py first."
+        )
 
     catalog = load_catalog(catalog_path)
     models_by_id = {m.get("id"): m for m in catalog}
@@ -139,7 +152,11 @@ def main():
 
         print("\nTop matches:")
         for idx, res in enumerate(results, start=1):
-            tasks = ", ".join(res["task"]) if isinstance(res["task"], list) else res["task"]
+            tasks = (
+                ", ".join(res["task"])
+                if isinstance(res["task"], list)
+                else res["task"]
+            )
             print(f"{idx}. {res['model_id']}  (score={res['score']:.3f})")
             print(f"   name: {res['name']}")
             if tasks:
