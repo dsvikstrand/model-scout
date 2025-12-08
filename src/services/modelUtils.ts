@@ -54,3 +54,22 @@ export function extractLicense(tags?: string[], license?: string): string | unde
   const licenseTag = tags?.find((tag) => tag.startsWith("license:"));
   return licenseTag ? licenseTag.replace("license:", "") : undefined;
 }
+
+export function getSizeBounds(size?: SearchFilters["size"]): {
+  min_param_count?: number;
+  max_param_count?: number;
+} {
+  if (!size) return {};
+  const range = SIZE_RANGES[size];
+  return {
+    min_param_count: range.min,
+    max_param_count: range.max,
+  };
+}
+
+export function getSizeBucketFromParams(params?: number): SearchFilters["size"] | undefined {
+  if (params === undefined) return undefined;
+  if (params < (SIZE_RANGES.small.max ?? Infinity)) return "small";
+  if (params >= (SIZE_RANGES.large.min ?? Number.MAX_SAFE_INTEGER)) return "large";
+  return "medium";
+}

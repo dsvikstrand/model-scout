@@ -80,6 +80,7 @@ export async function searchModelsKeyword(
           downloads: model.downloads,
           likes: model.likes,
           license,
+          provider: "keyword" as const,
           url: `https://huggingface.co/${model.id}`,
         },
         tags: model.tags,

@@ -1,5 +1,10 @@
 import { SearchFilters, ModelResult } from "../types/models";
-import { filterBySize, getParamsValue, matchesTask } from "./modelUtils";
+import {
+  filterBySize,
+  getParamsValue,
+  getSizeBounds,
+  matchesTask,
+} from "./modelUtils";
 
 const DEFAULT_SEMANTIC_API_URL = "https://davanstrien-huggingface-datasets-search-v2.hf.space";
 const SEMANTIC_API_URL =
@@ -9,17 +14,14 @@ const SEMANTIC_API_URL =
 
 interface SemanticSearchResponse {
   results?: Array<{
-    id: string;
+    model_id: string;
     summary?: string;
-    description?: string;
-    pipeline_tag?: string;
-    safetensors?: {
-      total?: number;
-      parameters?: Record<string, number>;
-    };
-    library_name?: string;
-    downloads?: number;
+    similarity?: number;
     likes?: number;
+    downloads?: number;
+    param_count?: number | null;
+    pipeline_tag?: string;
+    library?: string;
     license?: string;
   }>;
 }
@@ -31,16 +33,26 @@ export async function searchModelsSemantic(
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
 
-  const response = await fetch(`${SEMANTIC_API_URL}/api/search`, {
-    method: "POST",
+  const sizeBounds = getSizeBounds(filters.size);
+  const params = new URLSearchParams({
+    query: trimmedQuery,
+    k: "10",
+    sort_by: "similarity",
+    min_likes: "0",
+    min_downloads: "0",
+  });
+
+  if (sizeBounds.min_param_count !== undefined) {
+    params.set("min_param_count", sizeBounds.min_param_count.toString());
+  }
+  if (sizeBounds.max_param_count !== undefined) {
+    params.set("max_param_count", sizeBounds.max_param_count.toString());
+  }
+
+  const response = await fetch(`${SEMANTIC_API_URL}/search/models?${params.toString()}`, {
     headers: {
-      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-    body: JSON.stringify({
-      query: trimmedQuery,
-      limit: 50,
-      type: "model",
-    }),
   });
 
   if (!response.ok) {
@@ -55,18 +67,20 @@ export async function searchModelsSemantic(
 
   return data.results
     .map((item) => {
-      const totalParams = getParamsValue(item.safetensors?.total, item.safetensors?.parameters);
+      const totalParams = getParamsValue(item.param_count ?? undefined);
 
       return {
-        id: item.id,
-        description: item.summary || item.description,
+        id: item.model_id,
+        description: item.summary,
         task: item.pipeline_tag,
         params: totalParams,
-        framework: item.library_name,
+        framework: item.library,
         downloads: item.downloads,
         likes: item.likes,
         license: item.license,
-        url: `https://huggingface.co/${item.id}`,
+        similarity: item.similarity,
+        provider: "semantic" as const,
+        url: `https://huggingface.co/${item.model_id}`,
       };
     })
     .filter(
