@@ -17,6 +17,8 @@ interface SpaceResultItem {
   url: string;
   score: number;
   via?: string;
+  downloads?: number;
+  likes?: number;
 }
 
 let clientPromise: Promise<any> | null = null;
@@ -103,8 +105,8 @@ export async function searchModelsSemantic(
         task: primaryTask,
         params: paramsValue,
         framework: undefined,
-        downloads: undefined,
-        likes: undefined,
+        downloads: item.downloads,
+        likes: item.likes,
         license: catalogEntry?.license || item.license,
         similarity: item.score,
         provider: "semantic",

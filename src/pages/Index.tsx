@@ -6,6 +6,7 @@ import { SearchModeToggle } from "@/components/SearchModeToggle";
 import { FilterBar } from "@/components/FilterBar";
 import { ModelResultsList } from "@/components/ModelResultsList";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMemo } from "react";
 
 const Index = () => {
   const [mode, setMode] = useState<SearchMode>("semantic");
@@ -13,6 +14,7 @@ const Index = () => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [hasSearched, setHasSearched] = useState(false);
   const [topK, setTopK] = useState<number>(10);
+  const [sortBy, setSortBy] = useState<"relevance" | "downloads" | "likes">("relevance");
 
   const { data: models, isLoading, isError, error, refetch } = useModelSearch({
     mode,
@@ -33,6 +35,17 @@ const Index = () => {
   const handleSwitchToKeyword = useCallback(() => {
     setMode("keyword");
   }, []);
+
+  const sortedModels = useMemo(() => {
+    if (!models) return models;
+    const copy = [...models];
+    if (sortBy === "downloads") {
+      copy.sort((a, b) => (b.downloads ?? -1) - (a.downloads ?? -1));
+    } else if (sortBy === "likes") {
+      copy.sort((a, b) => (b.likes ?? -1) - (a.likes ?? -1));
+    }
+    return copy;
+  }, [models, sortBy]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,6 +81,19 @@ const Index = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Sort:</span>
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="downloads">Downloads</SelectItem>
+                  <SelectItem value="likes">Likes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -78,7 +104,7 @@ const Index = () => {
 
         {/* Results */}
         <ModelResultsList
-          models={models}
+          models={sortedModels}
           isLoading={isLoading}
           isError={isError}
           error={error}
