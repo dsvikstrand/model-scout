@@ -21,12 +21,18 @@ export function getParamsValue(total?: number, parameterMap?: Record<string, num
   return Math.max(...values);
 }
 
-export function filterBySize(params: number | undefined, sizeFilter: SearchFilters["size"]): boolean {
+export function filterBySize(
+  params: number | string | undefined,
+  sizeFilter: SearchFilters["size"]
+): boolean {
   if (!sizeFilter || params === undefined) return true;
 
+  const numericParams = typeof params === "string" ? parseParamsCount(params) : params;
+  if (numericParams === undefined) return true;
+
   const range = SIZE_RANGES[sizeFilter];
-  if (range.min !== undefined && params < range.min) return false;
-  if (range.max !== undefined && params >= range.max) return false;
+  if (range.min !== undefined && numericParams < range.min) return false;
+  if (range.max !== undefined && numericParams >= range.max) return false;
   return true;
 }
 
@@ -66,7 +72,8 @@ export function parseParamsCount(params?: string): number | undefined {
   if (unit === "k") return value * 1_000;
   if (unit === "m") return value * 1_000_000;
   if (unit === "b") return value * 1_000_000_000;
-  return value;
+  // default assume billions if no unit provided
+  return value * 1_000_000_000;
 }
 
 export function getSizeBounds(size?: SearchFilters["size"]): {

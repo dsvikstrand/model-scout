@@ -6,7 +6,7 @@
       "image-classification",
       "feature-extraction"
     ],
-    "params": "304.4M",
+    "params": "0.304B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -46,7 +46,7 @@
       "image-classification",
       "feature-extraction"
     ],
-    "params": "86.9M",
+    "params": "0.087B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -124,7 +124,7 @@
     "task": [
       "feature-extraction"
     ],
-    "params": "86.6M",
+    "params": "0.087B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -203,7 +203,7 @@
       "image-classification",
       "feature-extraction"
     ],
-    "params": "85.8M",
+    "params": "0.086B",
     "license": "MIT",
     "framework": [
       "PyTorch"
@@ -243,7 +243,7 @@
       "image-classification",
       "feature-extraction"
     ],
-    "params": "305.1M",
+    "params": "0.305B",
     "license": "MIT",
     "framework": [
       "PyTorch"
@@ -642,7 +642,7 @@
     "task": [
       "feature-extraction"
     ],
-    "params": "304M",
+    "params": "0.304B",
     "license": "MIT",
     "framework": [
       "PyTorch"
@@ -1111,7 +1111,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "20M",
+    "params": "0.02B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -1150,7 +1150,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "31M",
+    "params": "0.031B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -1189,7 +1189,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "42M",
+    "params": "0.042B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -1228,7 +1228,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "76M",
+    "params": "0.076B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -1267,7 +1267,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "43M",
+    "params": "0.043B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -1306,7 +1306,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "29M",
+    "params": "0.029B",
     "license": "Other",
     "framework": [
       "PyTorch"
@@ -1425,7 +1425,7 @@
     "task": [
       "object-detection"
     ],
-    "params": "40.2M",
+    "params": "0.04B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -2648,7 +2648,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "33M",
+    "params": "0.033B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -2687,7 +2687,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "137M",
+    "params": "0.137B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -2727,7 +2727,7 @@
       "code-embedding",
       "text-embedding"
     ],
-    "params": "161M",
+    "params": "0.161B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -2766,7 +2766,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "137M",
+    "params": "0.137B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -2805,7 +2805,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "137M",
+    "params": "0.137B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -3352,7 +3352,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "22M",
+    "params": "0.022B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -3391,7 +3391,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "33M",
+    "params": "0.033B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -3430,7 +3430,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "110M",
+    "params": "0.11B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -3469,7 +3469,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "137M",
+    "params": "0.137B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -3508,7 +3508,7 @@
     "task": [
       "text-embedding"
     ],
-    "params": "335M",
+    "params": "0.335B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
@@ -4026,7 +4026,7 @@
     "task": [
       "automatic-speech-recognition"
     ],
-    "params": "317M",
+    "params": "0.317B",
     "license": "Apache-2.0",
     "framework": [
       "PyTorch"
