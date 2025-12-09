@@ -19,9 +19,13 @@ interface SpaceResultItem {
   via?: string;
 }
 
-interface GradioSemanticResponse {
-  data: [SpaceResultItem[]]; // we only care about the first output
-  // other fields (is_generating, duration, etc.) are ignored
+let clientPromise: Promise<any> | null = null;
+
+async function getClient() {
+  if (!clientPromise) {
+    clientPromise = import("@gradio/client").then(({ Client }) => Client.connect(SEMANTIC_API_URL));
+  }
+  return clientPromise;
 }
 
 export async function searchModelsSemantic(
@@ -33,24 +37,20 @@ export async function searchModelsSemantic(
 
   const topK = 10;
 
-  const response = await fetch(`${SEMANTIC_API_URL}/semantic_search`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      // Gradio expects an array of inputs matching the interface signature
-      data: [trimmedQuery, topK],
-    }),
-  });
+  const client = await getClient();
+  let result: any;
 
-  if (!response.ok) {
-    throw new Error(`Semantic search failed: ${response.status} ${response.statusText}`);
+  try {
+    result = await client.predict("/semantic_search", {
+      query: trimmedQuery,
+      top_k: topK,
+    });
+  } catch (error: any) {
+    const message = error?.message || "Semantic search failed";
+    throw new Error(`Semantic search failed: ${message}`);
   }
 
-  const payload: GradioSemanticResponse = await response.json();
-  const items = payload?.data?.[0] ?? [];
+  const items: SpaceResultItem[] = (result?.data?.[0] as SpaceResultItem[]) ?? [];
 
   if (!Array.isArray(items) || items.length === 0) {
     return [];
@@ -58,7 +58,6 @@ export async function searchModelsSemantic(
 
   const results: ModelResult[] = items
     .map((item) => {
-      // tasks may be an array from the backend or a prejoined string
       let primaryTask: string | undefined;
       if (Array.isArray(item.tasks) && item.tasks.length > 0) {
         primaryTask = item.tasks[0];
@@ -79,7 +78,6 @@ export async function searchModelsSemantic(
         description: item.via || item.name,
         task: primaryTask,
         params: paramsValue,
-        // For now, framework/downloads/likes are not provided by the Space
         framework: undefined,
         downloads: undefined,
         likes: undefined,
