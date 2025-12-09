@@ -20,7 +20,7 @@ Vite + React + TypeScript, Tailwind, shadcn-ui, React Query.
    ```bash
    cp .env.example .env
    ```
-   - `VITE_SEMANTIC_SEARCH_BASE_URL` (default: davanstrien HF Space)
+   - `VITE_SEMANTIC_SEARCH_BASE_URL` (default: `V1kstrand/model-scout-semantic` HF Space – a curated model-scout semantic backend)
    - `VITE_HF_HUB_API_BASE_URL` (default: https://huggingface.co/api)
    - `VITE_HF_TOKEN` (optional HF token for gated models or higher limits; Vite embeds `VITE_*` values client-side, so do not use secrets you need to keep private)
 3. Run the dev server:

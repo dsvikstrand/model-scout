@@ -1,102 +1,27 @@
 import { SearchFilters, ModelResult } from "../types/models";
-import { filterBySize, matchesTask, parseParamsCount } from "./modelUtils";
+import { filterBySize, getParamsValue, matchesTask, parseParamsCount } from "./modelUtils";
 
-type EmbeddingRecord = {
+const DEFAULT_SEMANTIC_API_URL = "https://v1kstrand-model-scout-semantic.hf.space";
+
+const SEMANTIC_API_URL =
+  (import.meta.env.VITE_SEMANTIC_SEARCH_BASE_URL as string | undefined)?.replace(/\/$/, "") ||
+  DEFAULT_SEMANTIC_API_URL;
+
+interface SpaceResultItem {
   model_id: string;
-  level: string;
-  query: string;
-  embedding: number[];
-};
-
-type CatalogModel = {
-  id: string;
   name?: string;
-  task?: string[];
-  params?: string;
+  tasks?: string[] | string;
+  tasks_str?: string;
+  params?: string | number | null;
   license?: string;
-  framework?: string[];
-  url?: string;
-};
-
-const HF_EMBED_ENDPOINT =
-  import.meta.env.VITE_SEMANTIC_SEARCH_BASE_URL?.replace(/\/$/, "") ||
-  "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5/pipeline/feature-extraction";
-
-const EMBEDDINGS_URL = `${import.meta.env.BASE_URL}catalog_embeddings.json`;
-const CATALOG_URL = `${import.meta.env.BASE_URL}models_catalog.json`;
-
-let cachedEmbeddings: Float32Array[] | null = null;
-let cachedMeta: EmbeddingRecord[] | null = null;
-let cachedCatalog: Record<string, CatalogModel> | null = null;
-
-async function loadJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to load ${url}: ${res.status} ${res.statusText}`);
-  }
-  return res.json() as Promise<T>;
+  url: string;
+  score: number;
+  via?: string;
 }
 
-async function ensureDataLoaded() {
-  if (cachedEmbeddings && cachedMeta && cachedCatalog) return;
-
-  const [embeddings, catalog] = await Promise.all([
-    loadJson<EmbeddingRecord[]>(EMBEDDINGS_URL),
-    loadJson<CatalogModel[]>(CATALOG_URL),
-  ]);
-
-  cachedEmbeddings = embeddings.map((r) => Float32Array.from(r.embedding));
-  cachedMeta = embeddings;
-  cachedCatalog = catalog.reduce<Record<string, CatalogModel>>((acc, model) => {
-    if (model.id) acc[model.id] = model;
-    return acc;
-  }, {});
-}
-
-async function embedQuery(text: string): Promise<Float32Array> {
-  const token = import.meta.env.VITE_HF_TOKEN;
-  if (!token) {
-    throw new Error("Set VITE_HF_TOKEN to enable semantic embeddings.");
-  }
-  const res = await fetch(HF_EMBED_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ inputs: [text] }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Semantic embedding failed: ${res.status} ${res.statusText}`);
-  }
-
-  const data = await res.json();
-  const arr = Array.isArray(data) ? data : [];
-  if (!Array.isArray(arr[0])) {
-    throw new Error("Unexpected embedding response shape.");
-  }
-
-  const vec = Float32Array.from(arr[0] as number[]);
-  let norm = 0;
-  for (let i = 0; i < vec.length; i++) {
-    norm += vec[i] * vec[i];
-  }
-  norm = Math.sqrt(norm) || 1e-12;
-  for (let i = 0; i < vec.length; i++) {
-    vec[i] = vec[i] / norm;
-  }
-  return vec;
-}
-
-function dot(a: Float32Array, b: Float32Array): number {
-  const len = Math.min(a.length, b.length);
-  let sum = 0;
-  for (let i = 0; i < len; i++) {
-    sum += a[i] * b[i];
-  }
-  return sum;
+interface GradioSemanticResponse {
+  data: [SpaceResultItem[]]; // we only care about the first output
+  // other fields (is_generating, duration, etc.) are ignored
 }
 
 export async function searchModelsSemantic(
@@ -106,57 +31,70 @@ export async function searchModelsSemantic(
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
 
-  await ensureDataLoaded();
-  if (!cachedEmbeddings || !cachedMeta || !cachedCatalog) {
-    throw new Error("Semantic index not available.");
+  const topK = 10;
+
+  const response = await fetch(`${SEMANTIC_API_URL}/semantic_search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      // Gradio expects an array of inputs matching the interface signature
+      data: [trimmedQuery, topK],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Semantic search failed: ${response.status} ${response.statusText}`);
   }
 
-  const qVec = await embedQuery(trimmedQuery);
+  const payload: GradioSemanticResponse = await response.json();
+  const items = payload?.data?.[0] ?? [];
 
-  const scores = new Map<string, { score: number; via: string }>();
-
-  for (let i = 0; i < cachedEmbeddings.length; i++) {
-    const meta = cachedMeta[i];
-    const sim = dot(cachedEmbeddings[i], qVec);
-    const current = scores.get(meta.model_id);
-    if (!current || sim > current.score) {
-      scores.set(meta.model_id, { score: sim, via: meta.query });
-    }
+  if (!Array.isArray(items) || items.length === 0) {
+    return [];
   }
 
-  const results: ModelResult[] = [];
-  for (const [modelId, { score, via }] of scores.entries()) {
-    const model = cachedCatalog[modelId];
-    const tasks = model?.task;
-    const taskMatch =
-      !filters.task ||
-      matchesTask(
-        { pipelineTag: Array.isArray(tasks) ? tasks.join(",") : tasks, tags: tasks },
-        filters.task
-      );
+  const results: ModelResult[] = items
+    .map((item) => {
+      // tasks may be an array from the backend or a prejoined string
+      let primaryTask: string | undefined;
+      if (Array.isArray(item.tasks) && item.tasks.length > 0) {
+        primaryTask = item.tasks[0];
+      } else if (item.tasks_str) {
+        const parts = item.tasks_str.split(",").map((s) => s.trim());
+        primaryTask = parts[0] || undefined;
+      }
 
-    if (!taskMatch) continue;
+      let paramsValue: number | undefined;
+      if (typeof item.params === "number") {
+        paramsValue = getParamsValue(item.params);
+      } else if (typeof item.params === "string") {
+        paramsValue = parseParamsCount(item.params);
+      }
 
-    results.push({
-      id: modelId,
-      description: model?.name,
-      task: Array.isArray(tasks) ? tasks.join(", ") : tasks,
-      params: parseParamsCount(model?.params),
-      framework: Array.isArray(model?.framework) ? model?.framework?.join(", ") : model?.framework?.[0],
-      downloads: undefined,
-      likes: undefined,
-      license: model?.license,
-      url: model?.url || `https://huggingface.co/${modelId}`,
-      similarity: score,
-      provider: "semantic",
-      matchedQuery: via,
+      const model: ModelResult = {
+        id: item.model_id,
+        description: item.via || item.name,
+        task: primaryTask,
+        params: paramsValue,
+        // For now, framework/downloads/likes are not provided by the Space
+        framework: undefined,
+        downloads: undefined,
+        likes: undefined,
+        license: item.license,
+        similarity: item.score,
+        provider: "semantic",
+        url: item.url,
+        matchedQuery: item.via,
+      };
+
+      return model;
+    })
+    .filter((model) => {
+      return filterBySize(model.params, filters.size) && matchesTask({ pipelineTag: model.task }, filters.task);
     });
-  }
 
-  const filtered = results
-    .filter((model) => filterBySize(model.params, filters.size))
-    .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
-    .slice(0, 20);
-
-  return filtered;
+  return results;
 }
