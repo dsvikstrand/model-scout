@@ -89,6 +89,30 @@ async function fetchModelStats(modelId: string): Promise<{ downloads?: number; l
   }
 }
 
+function isSpaceWakingError(error: any): boolean {
+  const msg = (error?.message || "").toLowerCase();
+  return (
+    msg.includes("502") ||
+    msg.includes("503") ||
+    msg.includes("504") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("timeout") ||
+    msg.includes("network")
+  );
+}
+
+async function warmUpSpace() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    await fetch(`${SEMANTIC_API_URL}/gradio_api/info`, { signal: controller.signal });
+  } catch {
+    // ignore; warming attempt only
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function searchModelsSemantic(
   query: string,
   filters: SearchFilters,
@@ -102,14 +126,28 @@ export async function searchModelsSemantic(
   const [client, catalog] = await Promise.all([getClient(), getCatalog()]);
   let result: any;
 
-  try {
-    result = await client.predict("/semantic_search", {
+  const callPredict = async () =>
+    client.predict("/semantic_search", {
       query: trimmedQuery,
       top_k: topK,
     });
+
+  try {
+    result = await callPredict();
   } catch (error: any) {
-    const message = error?.message || "Semantic search failed";
-    throw new Error(`Semantic search failed: ${message}`);
+    if (isSpaceWakingError(error)) {
+      await warmUpSpace();
+      try {
+        result = await callPredict();
+      } catch (err: any) {
+        throw new Error(
+          "Semantic backend is waking up. Please wait ~1 minute and try again, or switch to Keyword mode."
+        );
+      }
+    } else {
+      const message = error?.message || "Semantic search failed";
+      throw new Error(`Semantic search failed: ${message}`);
+    }
   }
 
   const items: SpaceResultItem[] = (result?.data?.[0] as SpaceResultItem[]) ?? [];
