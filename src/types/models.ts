@@ -1,7 +1,7 @@
 export type SearchMode = "semantic" | "keyword";
 
 export interface SearchFilters {
-  task?: "text" | "vision" | "audio" | "multimodal" | "other";
+  task?: "text" | "vision" | "audio" | "multimodal" | "embedding" | "other";
   size?: "small" | "medium" | "large";
 }
 
@@ -26,6 +26,7 @@ export const TASK_PIPELINE_TAGS: Record<string, string[]> = {
   vision: ["image-classification", "object-detection", "image-segmentation", "image-to-image", "depth-estimation"],
   audio: ["automatic-speech-recognition", "audio-classification", "text-to-speech", "audio-to-audio"],
   multimodal: ["image-to-text", "text-to-image", "visual-question-answering", "document-question-answering", "video-classification"],
+  embedding: ["sentence-similarity", "text-embedding"],
   other: ["reinforcement-learning", "tabular-classification", "tabular-regression", "feature-extraction"],
 };
 

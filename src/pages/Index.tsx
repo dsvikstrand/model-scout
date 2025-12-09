@@ -5,17 +5,20 @@ import { SearchInput } from "@/components/SearchInput";
 import { SearchModeToggle } from "@/components/SearchModeToggle";
 import { FilterBar } from "@/components/FilterBar";
 import { ModelResultsList } from "@/components/ModelResultsList";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Index = () => {
   const [mode, setMode] = useState<SearchMode>("semantic");
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<SearchFilters>({});
   const [hasSearched, setHasSearched] = useState(false);
+  const [topK, setTopK] = useState<number>(10);
 
   const { data: models, isLoading, isError, error, refetch } = useModelSearch({
     mode,
     query,
     filters,
+    topK,
   });
 
   const handleSearch = useCallback((newQuery: string) => {
@@ -50,6 +53,21 @@ const Index = () => {
           
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <SearchModeToggle mode={mode} onModeChange={handleModeChange} />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Top K:</span>
+              <Select value={String(topK)} onValueChange={(value) => setTopK(Number(value))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 15, 20].map((k) => (
+                    <SelectItem key={k} value={String(k)}>
+                      {k}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

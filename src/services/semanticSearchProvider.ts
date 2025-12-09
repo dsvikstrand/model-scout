@@ -20,6 +20,7 @@ interface SpaceResultItem {
 }
 
 let clientPromise: Promise<any> | null = null;
+let catalogPromise: Promise<Record<string, { params?: string; license?: string }>> | null = null;
 
 async function getClient() {
   if (!clientPromise) {
@@ -28,16 +29,36 @@ async function getClient() {
   return clientPromise;
 }
 
+async function getCatalog(): Promise<Record<string, { params?: string; license?: string }>> {
+  if (!catalogPromise) {
+    const url = `${import.meta.env.BASE_URL}models_catalog.json`;
+    catalogPromise = fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load catalog: ${res.status}`);
+        return res.json();
+      })
+      .then((items: Array<{ id: string; params?: string; license?: string }>) =>
+        items.reduce<Record<string, { params?: string; license?: string }>>((acc, item) => {
+          if (item.id) acc[item.id] = { params: item.params, license: item.license };
+          return acc;
+        }, {})
+      )
+      .catch(() => ({}));
+  }
+  return catalogPromise;
+}
+
 export async function searchModelsSemantic(
   query: string,
-  filters: SearchFilters
+  filters: SearchFilters,
+  options?: { topK?: number }
 ): Promise<ModelResult[]> {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
 
-  const topK = 10;
+  const topK = options?.topK ?? 10;
 
-  const client = await getClient();
+  const [client, catalog] = await Promise.all([getClient(), getCatalog()]);
   let result: any;
 
   try {
@@ -66,22 +87,25 @@ export async function searchModelsSemantic(
         primaryTask = parts[0] || undefined;
       }
 
-      let paramsValue: number | undefined;
-      if (typeof item.params === "number") {
-        paramsValue = getParamsValue(item.params);
-      } else if (typeof item.params === "string") {
-        paramsValue = parseParamsCount(item.params);
-      }
+      const catalogEntry = catalog[item.model_id];
+
+      const paramsValue =
+        parseParamsCount(catalogEntry?.params) ||
+        (typeof item.params === "number"
+          ? getParamsValue(item.params)
+          : typeof item.params === "string"
+            ? parseParamsCount(item.params)
+            : undefined);
 
       const model: ModelResult = {
         id: item.model_id,
-        description: item.via || item.name,
+        description: item.name,
         task: primaryTask,
         params: paramsValue,
         framework: undefined,
         downloads: undefined,
         likes: undefined,
-        license: item.license,
+        license: catalogEntry?.license || item.license,
         similarity: item.score,
         provider: "semantic",
         url: item.url,

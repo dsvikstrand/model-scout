@@ -5,6 +5,7 @@ export const TASK_KEYWORDS: Record<Exclude<SearchFilters["task"], undefined>, st
   vision: ["image", "vision", "object-detection", "segmentation", "image-to-image", "depth"],
   audio: ["audio", "speech", "text-to-speech", "automatic-speech-recognition"],
   multimodal: ["multimodal", "image-to-text", "text-to-image", "video", "vision-language", "visual-question-answering"],
+  embedding: ["embedding", "similarity", "retrieval"],
   other: [],
 };
 

@@ -6,12 +6,13 @@ interface UseModelSearchOptions {
   mode: SearchMode;
   query: string;
   filters: SearchFilters;
+  topK?: number;
 }
 
-export function useModelSearch({ mode, query, filters }: UseModelSearchOptions) {
+export function useModelSearch({ mode, query, filters, topK = 10 }: UseModelSearchOptions) {
   return useQuery<ModelResult[], Error>({
-    queryKey: ["models", mode, query, filters],
-    queryFn: () => searchModels(mode, query, filters),
+    queryKey: ["models", mode, query, filters, topK],
+    queryFn: () => searchModels(mode, query, filters, { topK }),
     enabled: !!query.trim(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,

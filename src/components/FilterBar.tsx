@@ -11,6 +11,7 @@ const TASKS = [
   { value: "text" as const, label: "Text" },
   { value: "vision" as const, label: "Vision" },
   { value: "audio" as const, label: "Audio" },
+  { value: "embedding" as const, label: "Embedding" },
   { value: "multimodal" as const, label: "Multimodal" },
   { value: "other" as const, label: "Other" },
 ];

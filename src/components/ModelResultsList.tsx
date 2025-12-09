@@ -90,14 +90,6 @@ export function ModelResultsList({
       {models.map((model, index) => (
         <ModelCard key={model.id} model={model} index={index} />
       ))}
-      {import.meta.env.DEV && models.length > 0 && (
-        <details className="text-xs text-muted-foreground bg-muted/40 border border-border/60 rounded-lg p-3">
-          <summary className="cursor-pointer text-foreground/80">Debug: first results (dev only)</summary>
-          <pre className="mt-2 whitespace-pre-wrap break-words text-foreground/80">
-{JSON.stringify(models.slice(0, 3), null, 2)}
-          </pre>
-        </details>
-      )}
     </div>
   );
 }
