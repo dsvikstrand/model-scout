@@ -174,6 +174,10 @@ const Index = () => {
           <p className="mt-3 text-lg text-muted-foreground">
             Discover Hugging Face models with natural language
           </p>
+          <p className="mt-2 text-sm text-muted-foreground max-w-2xl mx-auto">
+            The database is a small subset (~100) of popular Hugging Face models right now; more models will continue to be added.
+            Feel free to help us expand the catalog.
+          </p>
           <div className="mt-4 flex justify-center">
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogTrigger asChild>
