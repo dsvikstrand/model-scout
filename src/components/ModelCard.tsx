@@ -59,6 +59,11 @@ export function ModelCard({ model, index = 0 }: ModelCardProps) {
                 {model.framework}
               </Badge>
             )}
+            {model.similarity !== undefined && (
+              <Badge variant="outline" className="text-xs">
+                sim {model.similarity.toFixed(3)}
+              </Badge>
+            )}
           </div>
         </div>
 

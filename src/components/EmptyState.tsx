@@ -18,7 +18,7 @@ export function EmptyState({ type, error, onRetry, onSwitchMode, isSemanticMode 
         </div>
         <h3 className="text-lg font-medium text-foreground">Discover ML Models</h3>
         <p className="mt-2 text-muted-foreground max-w-md">
-          Describe what you're looking for in natural language, like "text classification for sentiment analysis" or "image generation model"
+          Describe what you're looking for in natural language, like "compact LLM for chat on a single GPU" or "fast image classifier for 224x224 photos".
         </p>
       </div>
     );
