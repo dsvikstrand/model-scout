@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Use root in development, GitHub Pages subpath in production
-  base: mode === "development" ? "/" : "/model-scout/",
+  base: "/",
 
   server: {
     host: "::",
