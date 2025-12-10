@@ -94,6 +94,20 @@ All colors MUST be HSL.
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 150% 50%;
+  }
+}
+
+.animate-shimmer {
+  background-size: 150% 100%;
+  animation: shimmer 12s linear infinite;
+}
+
 @layer base {
   * {
     @apply border-border;
