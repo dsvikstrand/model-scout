@@ -3,6 +3,8 @@ export type SearchMode = "semantic" | "keyword";
 export interface SearchFilters {
   task?: "text" | "vision" | "audio" | "multimodal" | "embedding" | "other";
   size?: "small" | "medium" | "large";
+  minDownloads?: number;
+  minLikes?: number;
 }
 
 export interface ModelResult {

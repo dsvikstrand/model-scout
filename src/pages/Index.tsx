@@ -13,14 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitModel, parseHfModelId } from "@/services/submissionService";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const [mode, setMode] = useState<SearchMode>("semantic");
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<SearchFilters>({});
   const [hasSearched, setHasSearched] = useState(false);
-  const [topK, setTopK] = useState<number>(10);
   const [sortBy, setSortBy] = useState<"relevance" | "downloads" | "likes">("relevance");
+  const TOP_K = 20;
   const [openDialog, setOpenDialog] = useState(false);
   const [submitState, setSubmitState] = useState<{
     hfUrl: string;
@@ -43,7 +44,7 @@ const Index = () => {
     mode,
     query,
     filters,
-    topK,
+    topK: TOP_K,
   });
 
   const handleSearch = useCallback((newQuery: string) => {
@@ -147,7 +148,13 @@ const Index = () => {
 
   const sortedModels = useMemo(() => {
     if (!models) return models;
-    const copy = [...models];
+    const minDownloads = filters.minDownloads ?? 0;
+    const minLikes = filters.minLikes ?? 0;
+    const copy = models.filter((m) => {
+      const downloads = m.downloads ?? 0;
+      const likes = m.likes ?? 0;
+      return downloads >= minDownloads && likes >= minLikes;
+    });
     if (sortBy === "downloads") {
       copy.sort((a, b) => (b.downloads ?? -1) - (a.downloads ?? -1));
     } else if (sortBy === "likes") {
@@ -281,32 +288,26 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <SearchModeToggle mode={mode} onModeChange={handleModeChange} />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Top K:</span>
-              <Select value={String(topK)} onValueChange={(value) => setTopK(Number(value))}>
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 10, 15, 20].map((k) => (
-                    <SelectItem key={k} value={String(k)}>
-                      {k}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Sort:</span>
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="relevance">Relevance</SelectItem>
-                  <SelectItem value="downloads">Downloads</SelectItem>
-                  <SelectItem value="likes">Likes</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex overflow-hidden rounded-md border bg-muted">
+                {[
+                  { value: "relevance", label: "Relevance" },
+                  { value: "downloads", label: "Downloads" },
+                  { value: "likes", label: "Likes" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSortBy(opt.value as typeof sortBy)}
+                    className={cn(
+                      "px-3 py-2 text-xs font-medium transition-colors",
+                      sortBy === opt.value ? "bg-background text-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
